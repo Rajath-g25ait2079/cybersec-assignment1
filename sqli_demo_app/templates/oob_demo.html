@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Out-of-Band SQLi Demo - IIT Jodhpur</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .header { background: #1a237e; color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 18px; }
+        .header a { color: #ffcc80; text-decoration: none; font-size: 13px; margin-left: 15px; }
+        .vuln-banner { background: #fff3e0; border-bottom: 2px solid #ff6f00; padding: 8px; font-size: 12px; color: #e65100; text-align: center; }
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .card { background: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .card h2 { color: #1a237e; font-size: 20px; margin-bottom: 5px; }
+        .card .desc { color: #888; font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+        .search-form { display: flex; gap: 10px; }
+        .search-form input { flex: 1; padding: 12px 15px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+        .search-form input:focus { border-color: #1a237e; }
+        .search-form button { padding: 12px 25px; background: #1a237e; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .result-box { margin-top: 15px; padding: 12px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 4px; font-size: 13px; color: #2e7d32; }
+        .debug-box { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-top: 18px; }
+        .debug-box .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .debug-box code { font-family: 'Consolas', monospace; font-size: 11px; color: #c62828; word-break: break-all; }
+        .exfil-log { margin-top: 25px; }
+        .exfil-log h3 { color: #c62828; font-size: 16px; margin-bottom: 12px; }
+        .exfil-log .log-entry {
+            background: #1a1a2e; color: #0f0; padding: 10px 15px; border-radius: 6px;
+            font-family: 'Consolas', monospace; font-size: 12px; margin-bottom: 8px;
+        }
+        .exfil-log .log-entry .ts { color: #888; font-size: 10px; }
+        .exfil-log .log-entry .data { color: #ff6f00; font-weight: 700; }
+        .diagram-box {
+            background: #f5f7fa; border: 1px solid #e0e0e0; border-radius: 8px;
+            padding: 25px; margin-top: 20px; text-align: center;
+        }
+        .diagram-box .flow {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            flex-wrap: wrap; font-size: 13px;
+        }
+        .diagram-box .node {
+            background: #fff; border: 2px solid #1a237e; padding: 10px 18px;
+            border-radius: 8px; font-weight: 600; color: #1a237e;
+        }
+        .diagram-box .arrow { font-size: 20px; color: #c62828; }
+        .diagram-box .node.attacker { border-color: #c62828; color: #c62828; }
+        .hint-box { background: #e3f2fd; border-left: 4px solid #1565c0; padding: 15px; border-radius: 4px; margin-top: 20px; }
+        .hint-box h4 { color: #1565c0; font-size: 13px; margin-bottom: 8px; }
+        .hint-box code { background: #e8eaf6; padding: 2px 6px; border-radius: 3px; font-size: 11px; color: #1a237e; }
+        .hint-box p { font-size: 12px; color: #555; line-height: 1.7; margin-bottom: 5px; }
+        .attack-nav { margin-top: 20px; }
+        .attack-nav a { display: inline-block; padding: 6px 12px; margin: 3px; background: #e8eaf6; color: #1a237e; border-radius: 5px; font-size: 11px; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="vuln-banner">&#9888; EDUCATIONAL DEMO — Simulated Out-of-Band SQL Injection exfiltration via custom DB function</div>
+
+<div class="header">
+    <h1>&#127891; IIT Jodhpur - OOB SQLi Demo</h1>
+    <div>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/search">Search</a>
+        <a href="/profile?id=1">Profile</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>&#128225; Out-of-Band SQL Injection Demo</h2>
+        <p class="desc">
+            In real-world OOB SQLi, the database sends data to an attacker-controlled server via DNS or HTTP requests
+            (e.g., using <code>UTL_HTTP</code> in Oracle or <code>xp_cmdshell</code> in MSSQL).<br><br>
+            This demo simulates OOB exfiltration using a custom SQLite function <code>exfiltrate()</code> that logs
+            extracted data to a file — representing the attacker's DNS/HTTP listener.
+        </p>
+
+        <!-- OOB Flow Diagram -->
+        <div class="diagram-box">
+            <strong style="color:#1a237e; font-size:13px;">Out-of-Band Exfiltration Flow</strong>
+            <div class="flow" style="margin-top:12px;">
+                <div class="node attacker">&#128100; Attacker</div>
+                <div class="arrow">&rarr;</div>
+                <div class="node">&#127760; Web App</div>
+                <div class="arrow">&rarr;</div>
+                <div class="node">&#128451; Database</div>
+                <div class="arrow">&rarr;</div>
+                <div class="node attacker">&#128225; Attacker's Server<br><small>(DNS/HTTP Listener)</small></div>
+            </div>
+        </div>
+
+        <form class="search-form" method="GET" action="/oob_demo" style="margin-top:20px;">
+            <input type="text" name="roll" value="{{ roll }}" placeholder="Enter Roll Number to trigger exfiltration" autocomplete="off">
+            <button type="submit">Execute</button>
+        </form>
+
+        {% if result %}
+        <div class="result-box">{{ result }}</div>
+        {% endif %}
+
+        {% if query %}
+        <div class="debug-box">
+            <div class="label">&#128270; SQL Query Executed</div>
+            <code>{{ query }}</code>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if exfil_log %}
+    <div class="exfil-log">
+        <h3>&#128680; Attacker's Exfiltration Log (Simulated DNS/HTTP Server)</h3>
+        {% for entry in exfil_log %}
+        <div class="log-entry">
+            <span class="ts">[{{ entry.timestamp }}]</span>
+            Received exfiltrated data: <span class="data">{{ entry.exfiltrated_data }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="hint-box">
+        <h4>&#128161; OOB SQLi Demo Hints</h4>
+        <p><strong>Basic exfiltration:</strong> Enter a valid roll number like <code>G25AIT2079</code> to see name:password exfiltrated</p>
+        <p><strong>Exfil all users:</strong> <code>' UNION SELECT exfiltrate(roll_number || ':' || name || ':' || password) FROM students--</code></p>
+        <p><strong>Exfil admin data:</strong> <code>' UNION SELECT exfiltrate(username || ':' || password || ':' || secret_notes) FROM admin_users--</code></p>
+        <p><strong>Get the flag:</strong> <code>' UNION SELECT exfiltrate(flag_name || '=' || flag_value) FROM secret_flags WHERE id=3--</code></p>
+    </div>
+
+    <div class="attack-nav">
+        <a href="/login">&#9312; In-Band SQLi</a>
+        <a href="/search">&#9313; Blind SQLi</a>
+        <a href="/profile?id=1">&#9314; Union SQLi</a>
+        <a href="/oob_demo">&#9315; OOB SQLi</a>
+    </div>
+</div>
+
+</body>
+</html>

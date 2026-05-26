@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - IIT Jodhpur LMS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .header { background: #1a237e; color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 18px; }
+        .header a { color: #ffcc80; text-decoration: none; font-size: 13px; margin-left: 15px; }
+        .vuln-banner { background: #fff3e0; border-bottom: 2px solid #ff6f00; padding: 8px; font-size: 12px; color: #e65100; text-align: center; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .welcome-card { background: #fff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .welcome-card h2 { color: #1a237e; font-size: 22px; margin-bottom: 8px; }
+        .welcome-card p { color: #666; font-size: 14px; }
+        .success-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 15px; }
+        .data-card { background: #fff; border-radius: 10px; padding: 25px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .data-card h3 { color: #1a237e; font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #e8eaf6; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #e8eaf6; color: #1a237e; padding: 10px 12px; text-align: left; font-weight: 600; }
+        td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #444; }
+        tr:hover td { background: #f5f7fa; }
+        .debug-box { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-top: 20px; }
+        .debug-box .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .debug-box code { font-family: 'Consolas', monospace; font-size: 11px; color: #c62828; word-break: break-all; }
+        .warning-box { background: #fff3e0; border-left: 4px solid #ff6f00; padding: 12px 18px; margin-top: 20px; border-radius: 4px; }
+        .warning-box p { font-size: 12px; color: #e65100; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="vuln-banner">&#9888; EDUCATIONAL DEMO — Login succeeded via SQL query shown below</div>
+
+<div class="header">
+    <h1>&#127891; IIT Jodhpur LMS</h1>
+    <div>
+        <a href="/">Home</a>
+        <a href="/search">Search</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="welcome-card">
+        <span class="success-tag">&#10003; Login Successful</span>
+        <h2>Welcome, {{ user.name }}</h2>
+        <p>Roll Number: {{ user.roll_number }} &nbsp;|&nbsp; Department: {{ user.department }} &nbsp;|&nbsp; Semester: {{ user.semester }}</p>
+    </div>
+
+    {% if all_results and all_results|length > 1 %}
+    <div class="warning-box">
+        <p><strong>&#9888; SQLi Detected!</strong> The query returned <strong>{{ all_results|length }} records</strong> instead of 1. This means the injection successfully bypassed authentication and leaked data from multiple users.</p>
+    </div>
+    {% endif %}
+
+    <div class="data-card">
+        <h3>&#128202; Query Results ({{ all_results|length }} record{{ 's' if all_results|length > 1 else '' }} returned)</h3>
+        <table>
+            <tr>
+                <th>ID</th><th>Roll Number</th><th>Name</th><th>Email</th><th>Department</th><th>Semester</th><th>Password</th>
+            </tr>
+            {% for row in all_results %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.roll_number }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.email }}</td>
+                <td>{{ row.department }}</td>
+                <td>{{ row.semester }}</td>
+                <td style="color:#c62828;font-weight:600;">{{ row.password }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% if query %}
+    <div class="debug-box">
+        <div class="label">&#128270; SQL Query Executed</div>
+        <code>{{ query }}</code>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
